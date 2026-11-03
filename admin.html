@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Administrar sabores · Las Inge-niosas</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#FDF0E3;color:#4B2E20;margin:0;padding:1.5rem}
+main{max-width:480px;margin:auto}h1{font-size:1.5rem}
+input[type=password]{width:100%;padding:.8rem;border:1.5px solid #EBD3C0;border-radius:12px;font-size:1rem;box-sizing:border-box}
+label.s{display:flex;align-items:center;gap:.8rem;background:#FFF8F0;border:1px solid #EBD3C0;border-radius:14px;padding:.9rem 1rem;margin:.5rem 0;font-weight:600}
+label.s input{width:1.3rem;height:1.3rem}
+button{width:100%;margin-top:1rem;padding:1rem;border:0;border-radius:999px;background:#4B2E20;color:#FDF0E3;font-size:1rem;font-weight:700;cursor:pointer}
+#msg{margin-top:1rem;font-weight:600}
+</style></head><body><main>
+<h1>Sabores disponibles</h1>
+<p>Desmarca los sabores que se agotaron. Los clientes los verán como “Agotado” y no podrán pedirlos.</p>
+<div id="list"></div>
+<label style="display:grid;gap:.3rem;margin-top:1rem;font-weight:600">Contraseña de administración<input type="password" id="pw" autocomplete="current-password"></label>
+<button id="save" type="button">Guardar cambios</button>
+<p id="msg" role="status"></p>
+</main>
+<script>
+const P=[["triple","Triple Chocolate"],["limon","Pie de Limón"],["rafaello","Rafaello"],["tresleches","Tres Leches"],["frutosrojos","Cheesecake de Frutos Rojos"],["maracuya","Cheesecake de Maracuyá"],["mocca","Delicia de Mocca"],["beso","Beso de Ángel"],["mango","Mango Biche"]];
+const L=document.getElementById('list'),M=document.getElementById('msg');
+L.innerHTML=P.map(p=>'<label class="s"><input type="checkbox" value="'+p[0]+'" checked> '+p[1]+'</label>').join('');
+fetch('/api/disponibilidad',{cache:'no-store'}).then(r=>r.json()).then(a=>{
+  L.querySelectorAll('input').forEach(i=>{i.checked=!a.includes(i.value)});
+}).catch(()=>{M.textContent='No se pudo cargar el estado actual. ¿Ya activaste la función en Netlify?'});
+document.getElementById('save').onclick=async()=>{
+  const agotados=[...L.querySelectorAll('input')].filter(i=>!i.checked).map(i=>i.value);
+  M.textContent='Guardando…';
+  try{
+    const r=await fetch('/api/disponibilidad',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({password:document.getElementById('pw').value,agotados})});
+    M.textContent=r.ok?'¡Listo! Cambios guardados.':(r.status===401?'Contraseña incorrecta.':'Error al guardar.');
+  }catch(e){M.textContent='Error de conexión.'}
+};
+</script></body></html>
